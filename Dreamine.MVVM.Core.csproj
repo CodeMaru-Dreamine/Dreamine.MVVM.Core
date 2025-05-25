@@ -7,7 +7,7 @@
     <Nullable>enable</Nullable>
 
     <PackageId>Dreamine.MVVM.Core</PackageId>
-    <Version>1.0.0</Version>
+    <Version>1.0.1</Version>
     <Authors>Dreamine Core Team</Authors>
     <Company>Dreamine</Company>
     <Description>Dreamine MVVM 아키텍처의 핵심 기능인 ViewModelBase, Notifier, DI 기반 클래스를 포함하는 중심 모듈입니다.</Description>

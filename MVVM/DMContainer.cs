@@ -127,11 +127,7 @@ namespace Dreamine.MVVM.Core
 						if (type.GetConstructor(Type.EmptyTypes) != null)
 						{
 							_map[type] = () => Activator.CreateInstance(type)!;
-						}
-						else
-						{
-							System.Diagnostics.Debug.WriteLine($"[DMContainer] 생성자 없음 → {type.FullName}");
-						}
+						}					
 						continue;
 					}
 

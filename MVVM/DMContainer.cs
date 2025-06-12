@@ -12,6 +12,7 @@ namespace Dreamine.MVVM.Core
 	public static partial class DMContainer
 	{
 		private static readonly Dictionary<Type, Func<object>> _map = new();
+		private static readonly Dictionary<Type, object> _singletonCache = new();
 
 		/// <summary>
 		/// 주어진 타입 T에 대한 팩토리 함수를 등록합니다.
@@ -133,10 +134,16 @@ namespace Dreamine.MVVM.Core
 
 					_map[type] = () =>
 					{
+						if (_singletonCache.TryGetValue(type, out var cached))
+							return cached;
+
 						var args = ctor.GetParameters()
 							.Select(p => Resolve(p.ParameterType))
 							.ToArray();
-						return Activator.CreateInstance(type, args)!;
+						var instance = Activator.CreateInstance(type, args)!;
+
+						_singletonCache[type] = instance; // ✅ 진짜 Type 키로 캐싱
+						return instance;
 					};
 				}
 			}

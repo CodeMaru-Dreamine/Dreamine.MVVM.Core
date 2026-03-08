@@ -1,111 +1,226 @@
-# 🌟 Dreamine.MVVM.Core
+<!--!
+\file README.md
+\brief Dreamine.MVVM.Core - Lightweight MVVM infrastructure for WPF applications.
+\details Architecture, installation, quick-start, and component reference.
+\author Dreamine
+\date 2026-03-08
+\version 1.0.0
+-->
 
-## 🇰🇷 한국어 소개
+# Dreamine.MVVM.Core
 
-`Dreamine.MVVM.Core`는 Dreamine 프레임워크의 MVVM 아키텍처에서  
-ViewModel과 Model을 구현하는 데 필요한 핵심 베이스 클래스를 제공합니다.
+**Dreamine.MVVM.Core** is a **lightweight MVVM infrastructure** designed for modern .NET desktop applications.
 
-MVVM 구조의 핵심 구성요소인 `ViewModelBase`, `ObservableObject`,  
-또한 ICommand 바인딩을 위한 `VsRelayCommand` 등을 포함하며,  
-자동화와 선언적 개발을 중심에 둔 구조를 갖고 있습니다.
+It provides the essential building blocks required to implement MVVM while keeping the architecture **explicit, predictable, and easy to maintain**.
 
----
+Dreamine focuses on **clarity and developer control** rather than heavy framework abstraction.
 
-## ✨ 주요 클래스 및 기능
-
-| 클래스 / 기능 | 설명 |
-|---------------|------|
-| `ViewModelBase` | INotifyPropertyChanged 기본 구현 및 확장 지원 |
-| `ObservableObject` | 속성 변경 알림 + 단순 POCO용 |
-| `VsRelayCommand` | 파라미터 지원 커맨드 바인딩 |
-| `ICommandService` | 커맨드 그룹화 및 라우팅 지원 |
-| `ViewModelAttribute` | 진입 ViewModel 마킹 지원 어트리뷰트 |
+[➡️ 한국어 문서 보기](README_ko.md)
 
 ---
 
-## 📦 NuGet 설치
+## What this library solves
 
-```bash
-dotnet add package Dreamine.MVVM.Core
-```
+MVVM frameworks often introduce complexity such as:
 
-또는 `.csproj`에 직접 추가:
+- excessive configuration
+- heavy dependency injection frameworks
+- hidden View ↔ ViewModel wiring
+- large boilerplate code
+
+Dreamine.MVVM.Core solves these problems by providing a **minimal but powerful MVVM core**.
+
+---
+
+## Key Features
+
+- **ViewModelBase** for MVVM property notification
+- **RelayCommand** for ICommand implementation
+- **DMContainer** lightweight dependency injection container
+- **DreamineAppBuilder** application bootstrapper
+- Explicit View ↔ ViewModel architecture
+- Minimal boilerplate code
+
+---
+
+## Requirements
+
+- **.NET**: `net8.0-windows`
+- **UI Framework**: WPF
+
+---
+
+## Installation
+
+### Option A) Project Reference
+
+Add a project reference to your application:
 
 ```xml
-<PackageReference Include="Dreamine.MVVM.Core" Version="1.0.0" />
+<ItemGroup>
+  <ProjectReference Include="..\Dreamine.MVVM.Core\Dreamine.MVVM.Core.csproj" />
+</ItemGroup>
+```
+
+### Option B) NuGet (future)
+
+NuGet packaging is planned in future releases.
+
+---
+
+## Project Structure
+
+```
+Dreamine.MVVM.Core
+├── ViewModelBase.cs
+├── RelayCommand.cs
+├── DMContainer.cs
+└── DreamineAppBuilder.cs
 ```
 
 ---
 
-## 🔗 관련 링크
+## Architecture
 
-- 📁 GitHub: [Dreamine.MVVM.Core](https://github.com/CodeMaru-Dreamine/Dreamine.MVVM.Core)
-- 📝 문서: 준비 중
-- 💬 문의: [CodeMaru 드리마인팀](mailto:togood1983@gmail.com)
-
----
-
-## 🧙 프로젝트 철학
-
-> "몰라도 쓸 수 있게,  
-> 궁금하면 원리까지 이해되게."
-
-Dreamine은 MVVM을 단순히 구현 패턴이 아닌  
-자동화 중심의 선언적 프레임워크로 구현합니다.
-
----
-
-## 🖋️ 작성자 정보
-
-- 작성자: Dreamine Core Team  
-- 소유자: minsujang  
-- 날짜: 2025년 5월 25일  
-- 라이선스: MIT
-
----
-
-📅 문서 작성일: 2025년 5월 25일  
-⏱️ 총 소요시간: 약 15분  
-🤖 협력자: ChatGPT (GPT-4), 별명: 프레임워크 유혹자  
-✍️ 직책: Dreamine Core 설계자 (코드마루 대표 설계자)  
-🖋️ 기록자 서명: 아키로그 드림
-
----
-
-## 🇺🇸 English Summary
-
-`Dreamine.MVVM.Core` provides the foundational components for MVVM  
-architecture within the Dreamine framework.
-
-It contains base classes like `ViewModelBase`, `ObservableObject`, and  
-command-binding helpers that support declarative MVVM development.
-
-### ✨ Key Features
-
-| Component | Description |
-|-----------|-------------|
-| `ViewModelBase` | Implements `INotifyPropertyChanged` with helpers |
-| `ObservableObject` | Minimal POCO + notify support |
-| `VsRelayCommand` | Parameter-ready `ICommand` implementation |
-| `ICommandService` | Central command handling |
-| `ViewModelAttribute` | Entry-point ViewModel marking attribute |
-
----
-
-### 📦 Installation
-
-```bash
-dotnet add package Dreamine.MVVM.Core
+```
+Application
+│
+├── DreamineAppBuilder
+│
+├── DMContainer
+│
+├── View
+│    ↔ ViewModelBase
+│
+└── RelayCommand
 ```
 
 ---
 
-### 🔖 License
+## Quick Start
 
-MIT
+### 1) Initialize Dreamine
+
+```csharp
+DreamineAppBuilder.Initialize(
+    Assembly.GetExecutingAssembly());
+```
 
 ---
 
-📅 Last updated: May 25, 2025  
-✍️ Author: Dreamine Core Team  
-🤖 Assistant: ChatGPT (GPT-4)
+### 2) Create a ViewModel
+
+```csharp
+public class MainViewModel : ViewModelBase
+{
+    private string _title;
+
+    public string Title
+    {
+        get => _title;
+        set => SetProperty(ref _title, value);
+    }
+}
+```
+
+---
+
+### 3) Add Command
+
+```csharp
+public RelayCommand SaveCommand { get; }
+
+public MainViewModel()
+{
+    SaveCommand = new RelayCommand(Save);
+}
+
+private void Save()
+{
+    Console.WriteLine("Saved");
+}
+```
+
+---
+
+## Component Reference
+
+### ViewModelBase
+
+Base class for ViewModels.
+
+Provides:
+
+- INotifyPropertyChanged implementation
+- SetProperty helper
+
+---
+
+### RelayCommand
+
+Basic ICommand implementation used for UI actions.
+
+---
+
+### DMContainer
+
+Lightweight dependency injection container.
+
+Supports:
+
+- singleton registration
+- factory registration
+- constructor injection
+
+Example:
+
+```csharp
+DMContainer.Register<IMyService>(() => new MyService());
+var service = DMContainer.Resolve<IMyService>();
+```
+
+---
+
+### DreamineAppBuilder
+
+Initializes the Dreamine MVVM environment.
+
+Responsibilities:
+
+- container initialization
+- viewmodel discovery
+- application bootstrapping
+
+---
+
+## Comparison
+
+| Framework | Complexity | Boilerplate | Control |
+|----------|------------|-------------|--------|
+| Prism | High | High | Medium |
+| MVVMLight | Medium | Medium | Medium |
+| CommunityToolkit | Medium | Medium | Medium |
+| ReactiveUI | Very High | High | Low |
+| Dreamine | Low | Low | High |
+
+Dreamine prioritizes **clarity and developer control**.
+
+---
+
+## Roadmap
+
+Future modules:
+
+```
+Dreamine.Container
+Dreamine.MVVM.Generator
+Dreamine.Hybrid
+Dreamine.Threading
+Dreamine.Actuator
+```
+
+---
+
+## License
+
+MIT License

@@ -15,7 +15,7 @@ It provides the essential building blocks required to implement MVVM while keepi
 
 Dreamine focuses on **clarity and developer control** rather than heavy framework abstraction.
 
-[➡️ 한국어 문서 보기](README_ko.md)
+[➡️ 한국어 문서 보기](README_KO.md)
 
 ---
 

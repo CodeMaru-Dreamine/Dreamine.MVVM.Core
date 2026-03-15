@@ -1,8 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0-windows</TargetFramework>
-    <UseWPF>true</UseWPF>
+    <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 
@@ -16,25 +15,17 @@
     <RepositoryUrl>https://github.com/CodeMaru-Dreamine/Dreamine.MVVM.Core</RepositoryUrl>
     <Title>Dreamine.MVVM.Core</Title>
     <Copyright>© 2025 Dreamine Core Team. All rights reserved.</Copyright>
-    <PackageProjectUrl>https://github.com/CodeMaru-Dreamine/Dreamine.MVVM.FullKit</PackageProjectUrl>
-    <PackageIcon>icon.png</PackageIcon>
+    <PackageProjectUrl>https://github.com/CodeMaru-Dreamine/Dreamine.MVVM.FullKit</PackageProjectUrl> 
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
+	<ItemGroup>
+		<None Include="README.md" Pack="true" PackagePath="\" />
+	</ItemGroup>
+	
   <ItemGroup>
-    <None Include="..\..\..\Document\README.md">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
-    <None Include="..\..\.Templates\Dreamine.MVVM.Template\icon.png">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Dreamine.MVVM.Attributes\Dreamine.MVVM.Attributes.csproj" />
-    <ProjectReference Include="..\Dreamine.MVVM.Locators\Dreamine.MVVM.Locators.csproj" />
+    <ProjectReference Include="..\Attributes\Dreamine.MVVM.Attributes.csproj" />
+    <ProjectReference Include="..\Locators\Dreamine.MVVM.Locators.csproj" />
   </ItemGroup>
 
 </Project>

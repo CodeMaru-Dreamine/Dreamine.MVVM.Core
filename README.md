@@ -1,60 +1,54 @@
 <!--!
 \file README.md
-\brief Dreamine.MVVM.Core - Lightweight MVVM infrastructure for WPF applications.
-\details Architecture, installation, quick-start, and component reference.
+\brief Dreamine.MVVM.Core - Lightweight dependency injection and infrastructure module.
+\details Core container and infrastructure services for the Dreamine MVVM framework.
 \author Dreamine
-\date 2026-03-08
+\date 2026-03-15
 \version 1.0.0
 -->
 
 # Dreamine.MVVM.Core
 
-**Dreamine.MVVM.Core** is a **lightweight MVVM infrastructure** designed for modern .NET desktop applications.
+**Dreamine.MVVM.Core** is the **lightweight infrastructure core** of the Dreamine MVVM framework.
 
-It provides the essential building blocks required to implement MVVM while keeping the architecture **explicit, predictable, and easy to maintain**.
+It provides the minimal runtime foundation required to support explicit architecture, constructor-based resolution, and low-complexity application composition.
 
-Dreamine focuses on **clarity and developer control** rather than heavy framework abstraction.
+This package is intentionally small and focused.
 
 [➡️ 한국어 문서 보기](README_KO.md)
 
 ---
 
-## What this library solves
+## What this library provides
 
-MVVM frameworks often introduce complexity such as:
+Dreamine.MVVM.Core currently focuses on:
 
-- excessive configuration
-- heavy dependency injection frameworks
-- hidden View ↔ ViewModel wiring
-- large boilerplate code
-
-Dreamine.MVVM.Core solves these problems by providing a **minimal but powerful MVVM core**.
+- lightweight dependency registration
+- constructor-based object resolution
+- singleton and factory-based registration
+- minimal infrastructure for Dreamine MVVM modules
 
 ---
 
 ## Key Features
 
-- **ViewModelBase** for MVVM property notification
-- **RelayCommand** for ICommand implementation
 - **DMContainer** lightweight dependency injection container
-- **DreamineAppBuilder** application bootstrapper
-- Explicit View ↔ ViewModel architecture
-- Minimal boilerplate code
+- explicit registration model
+- constructor-based resolution
+- simple singleton caching
+- framework-light architecture
 
 ---
 
 ## Requirements
 
-- **.NET**: `net8.0-windows`
-- **UI Framework**: WPF
+- **.NET**: `net8.0`
 
 ---
 
 ## Installation
 
 ### Option A) Project Reference
-
-Add a project reference to your application:
 
 ```xml
 <ItemGroup>
@@ -72,152 +66,76 @@ NuGet packaging is planned in future releases.
 
 ```
 Dreamine.MVVM.Core
-├── ViewModelBase.cs
-├── RelayCommand.cs
-├── DMContainer.cs
-└── DreamineAppBuilder.cs
-```
-
----
-
-## Architecture
-
-```
-Application
-│
-├── DreamineAppBuilder
-│
-├── DMContainer
-│
-├── View
-│    ↔ ViewModelBase
-│
-└── RelayCommand
+└── DMContainer.cs
 ```
 
 ---
 
 ## Quick Start
 
-### 1) Initialize Dreamine
+### Register a service
 
 ```csharp
-DreamineAppBuilder.Initialize(
-    Assembly.GetExecutingAssembly());
+DMContainer.Register<IMyService>(() => new MyService());
 ```
 
----
-
-### 2) Create a ViewModel
+### Resolve a service
 
 ```csharp
-public class MainViewModel : ViewModelBase
-{
-    private string _title;
-
-    public string Title
-    {
-        get => _title;
-        set => SetProperty(ref _title, value);
-    }
-}
+IMyService service = DMContainer.Resolve<IMyService>();
 ```
 
----
-
-### 3) Add Command
+### Register a singleton
 
 ```csharp
-public RelayCommand SaveCommand { get; }
-
-public MainViewModel()
-{
-    SaveCommand = new RelayCommand(Save);
-}
-
-private void Save()
-{
-    Console.WriteLine("Saved");
-}
+var service = new MyService();
+DMContainer.RegisterSingleton<IMyService>(service);
 ```
 
 ---
 
 ## Component Reference
 
-### ViewModelBase
-
-Base class for ViewModels.
-
-Provides:
-
-- INotifyPropertyChanged implementation
-- SetProperty helper
-
----
-
-### RelayCommand
-
-Basic ICommand implementation used for UI actions.
-
----
-
 ### DMContainer
 
-Lightweight dependency injection container.
+`DMContainer` is the central infrastructure component of this package.
 
-Supports:
+Responsibilities:
 
-- singleton registration
-- factory registration
-- constructor injection
+- register factory delegates
+- register singleton instances
+- resolve constructor dependencies
+- auto-register supported application types
 
 Example:
 
 ```csharp
-DMContainer.Register<IMyService>(() => new MyService());
-var service = DMContainer.Resolve<IMyService>();
+DMContainer.Register<IMessageService>(() => new MessageService());
+
+var messageService = DMContainer.Resolve<IMessageService>();
 ```
 
 ---
 
-### DreamineAppBuilder
+## Design Goals
 
-Initializes the Dreamine MVVM environment.
+Dreamine.MVVM.Core prioritizes:
 
-Responsibilities:
-
-- container initialization
-- viewmodel discovery
-- application bootstrapping
-
----
-
-## Comparison
-
-| Framework | Complexity | Boilerplate | Control |
-|----------|------------|-------------|--------|
-| Prism | High | High | Medium |
-| MVVMLight | Medium | Medium | Medium |
-| CommunityToolkit | Medium | Medium | Medium |
-| ReactiveUI | Very High | High | Low |
-| Dreamine | Low | Low | High |
-
-Dreamine prioritizes **clarity and developer control**.
+- explicit behavior over hidden magic
+- low dependency surface
+- predictable constructor-based composition
+- simple extension points for higher-level modules
 
 ---
 
-## Roadmap
+## Related Modules
 
-Future modules:
+Typical composition with other Dreamine packages:
 
-```
-Dreamine.Container
-Dreamine.MVVM.Generator
-Dreamine.Hybrid
-Dreamine.Threading
-Dreamine.Actuator
-```
+- `Dreamine.MVVM.Interfaces`
+- `Dreamine.MVVM.ViewModels`
+- `Dreamine.MVVM.Locators`
+- `Dreamine.MVVM.Wpf`
 
 ---
 

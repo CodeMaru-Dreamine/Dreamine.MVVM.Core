@@ -1,50 +1,48 @@
 <!--!
-\file README_ko.md
-\brief Dreamine.MVVM.Core - WPF 애플리케이션을 위한 경량 MVVM 인프라.
-\details 아키텍처 / 설치 / 퀵스타트 / 컴포넌트 설명.
+\file README_KO.md
+\brief Dreamine.MVVM.Core - 경량 의존성 주입 및 인프라 모듈.
+\details Dreamine MVVM 프레임워크를 위한 코어 컨테이너 및 공통 인프라 서비스를 제공합니다.
 \author Dreamine
-\date 2026-03-08
+\date 2026-03-15
 \version 1.0.0
 -->
 
 # Dreamine.MVVM.Core
 
-**Dreamine.MVVM.Core**는 .NET 기반 WPF 애플리케이션을 위한 **경량 MVVM 프레임워크 코어 모듈**입니다.
+**Dreamine.MVVM.Core**는 Dreamine MVVM 프레임워크의 **경량 인프라 코어 모듈**입니다.
 
-MVVM 구현에 필요한 핵심 요소만 제공하며 **명확한 구조와 개발자 제어권**을 유지하도록 설계되었습니다.
+이 패키지는 명시적인 아키텍처, 생성자 기반 객체 해석, 낮은 복잡도의 애플리케이션 구성을 지원하기 위한 최소 런타임 기반을 제공합니다.
+
+의도적으로 작고 집중된 역할만 담당합니다.
 
 [➡️ English Version](README.md)
 
 ---
 
-## 이 라이브러리가 해결하는 문제
+## 이 라이브러리가 제공하는 것
 
-기존 MVVM 프레임워크들은 다음과 같은 문제를 가지는 경우가 많습니다.
+현재 Dreamine.MVVM.Core는 다음 역할에 집중합니다.
 
-- 복잡한 설정
-- 과도한 DI 프레임워크 의존
-- 숨겨진 View ↔ ViewModel 연결
-- 많은 반복 코드
-
-Dreamine.MVVM.Core는 이러한 문제를 해결하기 위해 **최소한의 MVVM 코어 구조**를 제공합니다.
+- 경량 의존성 등록
+- 생성자 기반 객체 해석
+- 싱글턴 및 팩토리 기반 등록
+- Dreamine MVVM 모듈을 위한 최소 공통 인프라 제공
 
 ---
 
 ## 주요 기능
 
-- **ViewModelBase** : MVVM 속성 변경 알림 지원
-- **RelayCommand** : ICommand 구현
-- **DMContainer** : 경량 DI 컨테이너
-- **DreamineAppBuilder** : 애플리케이션 초기화
-- 명시적 MVVM 구조
-- 최소 보일러플레이트 코드
+- **DMContainer** 경량 의존성 주입 컨테이너
+- 명시적 등록 모델
+- 생성자 기반 객체 해석
+- 단순한 싱글턴 캐싱
+- 가벼운 프레임워크 구조
 
 ---
 
 ## 요구사항
 
-- **.NET** : `net8.0-windows`
-- **UI Framework** : WPF
+- **.NET**: `net8.0`
 
 ---
 
@@ -60,7 +58,7 @@ Dreamine.MVVM.Core는 이러한 문제를 해결하기 위해 **최소한의 MVV
 
 ### 옵션 B) NuGet
 
-향후 NuGet 패키지로 배포될 예정입니다.
+향후 릴리스에서 NuGet 패키징이 제공될 예정입니다.
 
 ---
 
@@ -68,140 +66,76 @@ Dreamine.MVVM.Core는 이러한 문제를 해결하기 위해 **최소한의 MVV
 
 ```
 Dreamine.MVVM.Core
-├── ViewModelBase.cs
-├── RelayCommand.cs
-├── DMContainer.cs
-└── DreamineAppBuilder.cs
+└── DMContainer.cs
 ```
 
 ---
 
-## 아키텍처
+## 빠른 시작
 
-```
-Application
-│
-├── DreamineAppBuilder
-│
-├── DMContainer
-│
-├── View
-│    ↔ ViewModelBase
-│
-└── RelayCommand
-```
-
----
-
-## 퀵스타트
-
-### 1) Dreamine 초기화
+### 서비스 등록
 
 ```csharp
-DreamineAppBuilder.Initialize(
-    Assembly.GetExecutingAssembly());
+DMContainer.Register<IMyService>(() => new MyService());
 ```
 
----
-
-### 2) ViewModel 작성
+### 서비스 해석
 
 ```csharp
-public class MainViewModel : ViewModelBase
-{
-    private string _title;
-
-    public string Title
-    {
-        get => _title;
-        set => SetProperty(ref _title, value);
-    }
-}
+IMyService service = DMContainer.Resolve<IMyService>();
 ```
 
----
-
-### 3) Command 추가
+### 싱글턴 등록
 
 ```csharp
-public RelayCommand SaveCommand { get; }
-
-public MainViewModel()
-{
-    SaveCommand = new RelayCommand(Save);
-}
-
-private void Save()
-{
-    Console.WriteLine("Saved");
-}
+var service = new MyService();
+DMContainer.RegisterSingleton<IMyService>(service);
 ```
 
 ---
 
 ## 컴포넌트 설명
 
-### ViewModelBase
-
-모든 ViewModel의 기본 클래스입니다.
-
-- INotifyPropertyChanged 구현
-- SetProperty 제공
-
----
-
-### RelayCommand
-
-UI 이벤트 처리를 위한 ICommand 구현 클래스입니다.
-
----
-
 ### DMContainer
 
-Dreamine에서 사용하는 경량 DI 컨테이너입니다.
+`DMContainer`는 이 패키지의 핵심 인프라 컴포넌트입니다.
+
+주요 역할:
+
+- 팩토리 델리게이트 등록
+- 싱글턴 인스턴스 등록
+- 생성자 의존성 해석
+- 지원 대상 타입 자동 등록
+
+예시:
 
 ```csharp
-DMContainer.Register<IMyService>(() => new MyService());
-var service = DMContainer.Resolve<IMyService>();
+DMContainer.Register<IMessageService>(() => new MessageService());
+
+var messageService = DMContainer.Resolve<IMessageService>();
 ```
 
 ---
 
-### DreamineAppBuilder
+## 설계 목표
 
-Dreamine MVVM 환경을 초기화합니다.
+Dreamine.MVVM.Core는 다음을 우선합니다.
 
-- DI 컨테이너 초기화
-- ViewModel 검색
-- 애플리케이션 부트스트랩
-
----
-
-## 프레임워크 비교
-
-| 프레임워크 | 복잡도 | 코드량 | 제어권 |
-|-------------|--------|--------|--------|
-| Prism | 높음 | 높음 | 중간 |
-| MVVMLight | 중간 | 중간 | 중간 |
-| CommunityToolkit | 중간 | 중간 | 중간 |
-| ReactiveUI | 매우 높음 | 높음 | 낮음 |
-| Dreamine | 낮음 | 낮음 | 높음 |
-
-Dreamine은 **명확한 구조와 개발자 제어권**을 중요하게 생각합니다.
+- 숨겨진 마법보다 명시적 동작
+- 낮은 의존성 표면적
+- 예측 가능한 생성자 기반 구성
+- 상위 모듈을 위한 단순한 확장 지점
 
 ---
 
-## 로드맵
+## 관련 모듈
 
-향후 Dreamine 모듈:
+일반적으로 다음 Dreamine 패키지와 함께 구성됩니다.
 
-```
-Dreamine.Container
-Dreamine.MVVM.Generator
-Dreamine.Hybrid
-Dreamine.Threading
-Dreamine.Actuator
-```
+- `Dreamine.MVVM.Interfaces`
+- `Dreamine.MVVM.ViewModels`
+- `Dreamine.MVVM.Locators`
+- `Dreamine.MVVM.Wpf`
 
 ---
 

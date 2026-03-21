@@ -1,31 +1,34 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
 
-    <PackageId>Dreamine.MVVM.Core</PackageId>
-    <Version>1.0.7</Version>
-    <Authors>Dreamine Core Team</Authors>
-    <Company>Dreamine</Company>
-    <Description>Dreamine MVVM 아키텍처의 핵심 기능인 ViewModelBase, Notifier, DI 기반 클래스를 포함하는 중심 모듈입니다.</Description>
-    <PackageTags>MVVM;WPF;Dreamine;Core;ViewModel</PackageTags>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <RepositoryUrl>https://github.com/CodeMaru-Dreamine/Dreamine.MVVM.Core</RepositoryUrl>
-    <Title>Dreamine.MVVM.Core</Title>
-    <Copyright>© 2025 Dreamine Core Team. All rights reserved.</Copyright>
-    <PackageProjectUrl>https://github.com/CodeMaru-Dreamine/Dreamine.MVVM.FullKit</PackageProjectUrl> 
-    <PackageReadmeFile>README.md</PackageReadmeFile>
-  </PropertyGroup>
+		<PackageId>Dreamine.MVVM.Core</PackageId>
+		<Version>1.0.8</Version>
+		<Authors>Dreamine Core Team</Authors>
+		<Company>Dreamine</Company>
+		<Description>Core runtime package for Dreamine MVVM, including base ViewModel types, notification support, and foundational services.</Description>
+		<PackageTags>dreamine;mvvm;core;viewmodel;notification;runtime</PackageTags>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<RepositoryUrl>https://github.com/CodeMaru-Dreamine/Dreamine.MVVM.Core</RepositoryUrl>
+		<Title>Dreamine.MVVM.Core</Title>
+		<Copyright>© 2025 Dreamine Core Team. All rights reserved.</Copyright>
+		<PackageProjectUrl>https://github.com/CodeMaru-Dreamine/Dreamine.MVVM.FullKit</PackageProjectUrl>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageIcon>icon.png</PackageIcon>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+	</PropertyGroup>
 
 	<ItemGroup>
 		<None Include="README.md" Pack="true" PackagePath="\" />
+		<None Include="icon.png" Pack="true" PackagePath="\" />
 	</ItemGroup>
-	
-  <ItemGroup>
-    <ProjectReference Include="..\Attributes\Dreamine.MVVM.Attributes.csproj" />
-    <ProjectReference Include="..\Locators\Dreamine.MVVM.Locators.csproj" />
-  </ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Attributes\Dreamine.MVVM.Attributes.csproj" />
+		<ProjectReference Include="..\Locators\Dreamine.MVVM.Locators.csproj" />
+	</ItemGroup>
 
 </Project>

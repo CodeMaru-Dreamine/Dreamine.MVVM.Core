@@ -39,7 +39,10 @@ namespace Dreamine.MVVM.Core
         public static T Resolve<T>() where T : class
         {
             if (_map.TryGetValue(typeof(T), out var factory))
+            {
                 return (T)factory();
+            }
+
             throw new InvalidOperationException($"[{typeof(T).Name}] 등록되지 않음.");
         }
 
@@ -52,21 +55,17 @@ namespace Dreamine.MVVM.Core
         public static object Resolve(Type type)
         {
             if (_map.TryGetValue(type, out var factory))
+            {
                 return factory();
+            }
 
             // Fallback: 자동 생성 시도 (등록 안됐지만 생성 가능한 경우)
             if (!type.IsAbstract && type.IsClass)
             {
-                var ctor = type.GetConstructors()
-                    .OrderByDescending(c => c.GetParameters().Length)
-                    .FirstOrDefault();
-
+                ConstructorInfo? ctor = GetPreferredConstructor(type);
                 if (ctor != null)
                 {
-                    var args = ctor.GetParameters()
-                        .Select(p => Resolve(p.ParameterType))
-                        .ToArray();
-                    var instance = Activator.CreateInstance(type, args)!;
+                    object instance = CreateInstance(type, ctor);
 
                     // 선택: 한번 생성되면 캐시할 수도 있음
                     _map[type] = () => instance;
@@ -78,7 +77,6 @@ namespace Dreamine.MVVM.Core
             throw new InvalidOperationException($"[{type.FullName}] 등록되지 않았고, 생성도 불가능합니다.");
         }
 
-
         /// <summary>
         /// 주어진 어셈블리 및 현재 AppDomain 내 어셈블리에서
         /// Model, Event, Manager, ViewModel, View 타입들을 자동 등록합니다.
@@ -86,66 +84,159 @@ namespace Dreamine.MVVM.Core
         /// <param name="rootAssembly">우선 처리할 주 어셈블리</param>
         public static void AutoRegisterAll(Assembly rootAssembly)
         {
-            var assemblies = AppDomain.CurrentDomain.GetAssemblies()
-                .Where(a => !a.IsDynamic && !string.IsNullOrEmpty(a.FullName))
-                .Prepend(rootAssembly) // 우선 대상 Assembly 먼저
-                .Distinct();
-
-            foreach (var assembly in assemblies)
+            foreach (Assembly assembly in GetCandidateAssemblies(rootAssembly))
             {
-                foreach (var type in SafeGetTypes(assembly))
-                {
-                    if (!type.IsClass || type.IsAbstract || type.IsGenericType)
-                        continue;
-
-                    var name = type.Name;
-
-                    // DreamineApp + SampleTest 구조 모두 대응
-                    bool isTarget =
-                        name.EndsWith("Model") ||
-                        name.EndsWith("Event") ||
-                        name.EndsWith("Manager") ||
-                        name.EndsWith("ViewModel") ||
-                        name.Contains(".xaml.ViewModel") ||
-                        name.Contains(".xaml.Model") ||
-                        name.Contains(".xaml.Event") ;
-
-                    if (!isTarget)
-                        continue;
-
-                    if (_map.ContainsKey(type))
-                        continue;
-
-                    // 생성자 우선 등록
-                    var ctor = type.GetConstructors()
-                        .OrderByDescending(c => c.GetParameters().Length)
-                        .FirstOrDefault();
-
-                    if (ctor == null)
-                    {
-                        // 매개변수 없는 생성자라도 등록 시도
-                        if (type.GetConstructor(Type.EmptyTypes) != null)
-                        {
-                            _map[type] = () => Activator.CreateInstance(type)!;
-                        }
-                        continue;
-                    }
-
-                    _map[type] = () =>
-                    {
-                        if (_singletonCache.TryGetValue(type, out var cached))
-                            return cached;
-
-                        var args = ctor.GetParameters()
-                            .Select(p => Resolve(p.ParameterType))
-                            .ToArray();
-                        var instance = Activator.CreateInstance(type, args)!;
-
-                        _singletonCache[type] = instance; // ✅ 진짜 Type 키로 캐싱
-                        return instance;
-                    };
-                }
+                RegisterAssemblyTypes(assembly);
             }
+        }
+
+        /// <summary>
+        /// 자동 등록 대상 어셈블리 목록을 반환합니다.
+        /// rootAssembly를 우선 순위로 포함하고, 현재 AppDomain에 로드된 유효한 어셈블리만 대상으로 합니다.
+        /// </summary>
+        /// <param name="rootAssembly">우선 처리할 주 어셈블리</param>
+        /// <returns>자동 등록 대상 어셈블리 목록</returns>
+        private static IEnumerable<Assembly> GetCandidateAssemblies(Assembly rootAssembly)
+        {
+            return AppDomain.CurrentDomain.GetAssemblies()
+                .Where(assembly => !assembly.IsDynamic && !string.IsNullOrEmpty(assembly.FullName))
+                .Prepend(rootAssembly)
+                .Distinct();
+        }
+
+        /// <summary>
+        /// 지정된 어셈블리의 타입들을 순회하며 자동 등록을 시도합니다.
+        /// </summary>
+        /// <param name="assembly">검사할 어셈블리</param>
+        private static void RegisterAssemblyTypes(Assembly assembly)
+        {
+            foreach (Type type in SafeGetTypes(assembly))
+            {
+                TryRegisterType(type);
+            }
+        }
+
+        /// <summary>
+        /// 지정된 타입이 자동 등록 대상이면 팩토리를 등록합니다.
+        /// </summary>
+        /// <param name="type">등록 후보 타입</param>
+        private static void TryRegisterType(Type type)
+        {
+            if (!IsRegistrableConcreteType(type))
+            {
+                return;
+            }
+
+            if (!IsAutoRegisterTarget(type))
+            {
+                return;
+            }
+
+            if (_map.ContainsKey(type))
+            {
+                return;
+            }
+
+            Func<object>? factory = CreateFactory(type);
+            if (factory is null)
+            {
+                return;
+            }
+
+            _map[type] = factory;
+        }
+
+        /// <summary>
+        /// 자동 등록 가능한 일반 클래스인지 확인합니다.
+        /// </summary>
+        /// <param name="type">검사할 타입</param>
+        /// <returns>등록 가능한 일반 클래스이면 true</returns>
+        private static bool IsRegistrableConcreteType(Type type)
+        {
+            return type.IsClass && !type.IsAbstract && !type.IsGenericType;
+        }
+
+        /// <summary>
+        /// 타입명이 자동 등록 규칙에 해당하는지 확인합니다.
+        /// </summary>
+        /// <param name="type">검사할 타입</param>
+        /// <returns>자동 등록 대상이면 true</returns>
+        private static bool IsAutoRegisterTarget(Type type)
+        {
+            string name = type.Name;
+
+            return name.EndsWith("Model", StringComparison.Ordinal) ||
+                   name.EndsWith("Event", StringComparison.Ordinal) ||
+                   name.EndsWith("Manager", StringComparison.Ordinal) ||
+                   name.EndsWith("ViewModel", StringComparison.Ordinal) ||
+                   name.Contains(".xaml.ViewModel", StringComparison.Ordinal) ||
+                   name.Contains(".xaml.Model", StringComparison.Ordinal) ||
+                   name.Contains(".xaml.Event", StringComparison.Ordinal);
+        }
+
+        /// <summary>
+        /// 지정된 타입에 대한 팩토리를 생성합니다.
+        /// 생성 가능한 생성자가 없으면 null을 반환합니다.
+        /// </summary>
+        /// <param name="type">팩토리를 만들 대상 타입</param>
+        /// <returns>생성 팩토리 또는 null</returns>
+        private static Func<object>? CreateFactory(Type type)
+        {
+            ConstructorInfo? ctor = GetPreferredConstructor(type);
+            if (ctor is null)
+            {
+                return type.GetConstructor(Type.EmptyTypes) is null
+                    ? null
+                    : () => Activator.CreateInstance(type)!;
+            }
+
+            return () => GetOrCreateSingleton(type, ctor);
+        }
+
+        /// <summary>
+        /// 생성자 매개변수가 가장 많은 생성자를 우선 생성자로 선택합니다.
+        /// </summary>
+        /// <param name="type">대상 타입</param>
+        /// <returns>선택된 생성자 또는 null</returns>
+        private static ConstructorInfo? GetPreferredConstructor(Type type)
+        {
+            return type.GetConstructors()
+                .OrderByDescending(constructor => constructor.GetParameters().Length)
+                .FirstOrDefault();
+        }
+
+        /// <summary>
+        /// 싱글턴 캐시에서 인스턴스를 가져오거나, 없으면 생성 후 캐시합니다.
+        /// </summary>
+        /// <param name="type">생성 대상 타입</param>
+        /// <param name="ctor">사용할 생성자</param>
+        /// <returns>생성되었거나 캐시된 인스턴스</returns>
+        private static object GetOrCreateSingleton(Type type, ConstructorInfo ctor)
+        {
+            if (_singletonCache.TryGetValue(type, out object? cached))
+            {
+                return cached;
+            }
+
+            object instance = CreateInstance(type, ctor);
+            _singletonCache[type] = instance;
+
+            return instance;
+        }
+
+        /// <summary>
+        /// 지정된 생성자와 Resolve 결과를 이용해 인스턴스를 생성합니다.
+        /// </summary>
+        /// <param name="type">생성할 타입</param>
+        /// <param name="ctor">사용할 생성자</param>
+        /// <returns>생성된 인스턴스</returns>
+        private static object CreateInstance(Type type, ConstructorInfo ctor)
+        {
+            object[] args = ctor.GetParameters()
+                .Select(parameter => Resolve(parameter.ParameterType))
+                .ToArray();
+
+            return Activator.CreateInstance(type, args)!;
         }
 
         /// <summary>
@@ -161,7 +252,7 @@ namespace Dreamine.MVVM.Core
             }
             catch (ReflectionTypeLoadException ex)
             {
-                return ex.Types.Where(t => t != null)!;
+                return ex.Types.Where(type => type != null)!;
             }
         }
     }

@@ -6,7 +6,7 @@
 		<Nullable>enable</Nullable>
 
 		<PackageId>Dreamine.MVVM.Core</PackageId>
-		<Version>1.0.8</Version>
+		<Version>1.0.9</Version>
 		<Authors>Dreamine Core Team</Authors>
 		<Company>Dreamine</Company>
 		<Description>Core runtime package for Dreamine MVVM, including base ViewModel types, notification support, and foundational services.</Description>

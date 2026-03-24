@@ -11,8 +11,8 @@ namespace Dreamine.MVVM.Core
     /// </summary>
     public static partial class DMContainer
     {
-        private static readonly Dictionary<Type, Func<object>> _map = new();
-        private static readonly Dictionary<Type, object> _singletonCache = new();
+        private static readonly Dictionary<Type, Func<object>> _map = new(32);
+        private static readonly Dictionary<Type, object> _singletonCache = new(32);
 
         /// <summary>
         /// 주어진 타입 T에 대한 팩토리 함수를 등록합니다.
@@ -232,9 +232,11 @@ namespace Dreamine.MVVM.Core
         /// <returns>생성된 인스턴스</returns>
         private static object CreateInstance(Type type, ConstructorInfo ctor)
         {
-            object[] args = ctor.GetParameters()
-                .Select(parameter => Resolve(parameter.ParameterType))
-                .ToArray();
+            object[] args =
+            [
+                .. ctor.GetParameters()
+                    .Select(parameter => Resolve(parameter.ParameterType))
+            ];
 
             return Activator.CreateInstance(type, args)!;
         }

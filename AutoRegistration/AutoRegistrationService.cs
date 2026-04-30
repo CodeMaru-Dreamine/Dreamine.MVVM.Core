@@ -11,7 +11,7 @@ namespace Dreamine.MVVM.Core.AutoRegistration
     public sealed class AutoRegistrationService : IAutoRegistrationService
     {
         private readonly IAssemblyTypeScanner _typeScanner;
-        private readonly NamingConventionAutoRegistrationFilter _filter;
+        private readonly IAutoRegistrationFilter _filter;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AutoRegistrationService"/> class.
@@ -20,7 +20,7 @@ namespace Dreamine.MVVM.Core.AutoRegistration
         /// <param name="filter">The auto-registration filter.</param>
         public AutoRegistrationService(
             IAssemblyTypeScanner typeScanner,
-            NamingConventionAutoRegistrationFilter filter)
+            IAutoRegistrationFilter filter)
         {
             _typeScanner = typeScanner ?? throw new ArgumentNullException(nameof(typeScanner));
             _filter = filter ?? throw new ArgumentNullException(nameof(filter));

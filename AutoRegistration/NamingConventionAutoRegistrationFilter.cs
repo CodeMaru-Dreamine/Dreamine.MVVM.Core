@@ -1,11 +1,12 @@
 ﻿using System;
+using Dreamine.MVVM.Interfaces.DependencyInjection;
 
 namespace Dreamine.MVVM.Core.AutoRegistration
 {
     /// <summary>
     /// Determines whether a type matches Dreamine auto-registration naming conventions.
     /// </summary>
-    public sealed class NamingConventionAutoRegistrationFilter
+    public sealed class NamingConventionAutoRegistrationFilter : IAutoRegistrationFilter
     {
         /// <summary>
         /// Determines whether the specified type is eligible for auto registration.

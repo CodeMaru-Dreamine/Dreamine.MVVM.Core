@@ -100,6 +100,7 @@ namespace Dreamine.MVVM.Core
         /// <returns>The resolved service instance.</returns>
         public static object Resolve(Type type)
         {
+            ArgumentNullException.ThrowIfNull(type);
             return Container.Resolve(type);
         }
 
@@ -115,10 +116,21 @@ namespace Dreamine.MVVM.Core
         /// <summary>
         /// Determines whether the specified service type is registered.
         /// </summary>
+        /// <typeparam name="TService">The service type.</typeparam>
+        /// <returns>True if the service type is registered; otherwise false.</returns>
+        public static bool IsRegistered<TService>()
+        {
+            return Container.IsRegistered(typeof(TService));
+        }
+
+        /// <summary>
+        /// Determines whether the specified service type is registered.
+        /// </summary>
         /// <param name="serviceType">The service type.</param>
         /// <returns>True if the service type is registered; otherwise false.</returns>
         public static bool IsRegistered(Type serviceType)
         {
+            ArgumentNullException.ThrowIfNull(serviceType);
             return Container.IsRegistered(serviceType);
         }
     }

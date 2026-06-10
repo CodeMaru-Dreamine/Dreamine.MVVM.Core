@@ -1,7 +1,8 @@
-﻿using System;
+using System;
 using System.Reflection;
 using Dreamine.MVVM.Core.AutoRegistration;
 using Dreamine.MVVM.Core.DependencyInjection;
+using Dreamine.MVVM.Interfaces.DependencyInjection;
 
 namespace Dreamine.MVVM.Core
 {
@@ -10,11 +11,37 @@ namespace Dreamine.MVVM.Core
     /// </summary>
     public static partial class DMContainer
     {
-        private static readonly DreamineContainer Container = new();
+        private static readonly object SyncRoot = new();
+        private static IServiceContainer Container = new DreamineContainer();
 
         private static readonly AutoRegistrationService AutoRegistrationService = new(
             new AssemblyTypeScanner(),
             new NamingConventionAutoRegistrationFilter());
+
+        /// <summary>
+        /// Replaces the default container used by the static facade.
+        /// </summary>
+        /// <param name="container">The container to use for subsequent registrations and resolutions.</param>
+        public static void SetContainer(IServiceContainer container)
+        {
+            ArgumentNullException.ThrowIfNull(container);
+
+            lock (SyncRoot)
+            {
+                Container = container;
+            }
+        }
+
+        /// <summary>
+        /// Resets the static facade to a new empty <see cref="DreamineContainer"/> instance.
+        /// </summary>
+        public static void Reset()
+        {
+            lock (SyncRoot)
+            {
+                Container = new DreamineContainer();
+            }
+        }
 
         /// <summary>
         /// Registers a concrete implementation type as itself with transient lifetime.
@@ -23,7 +50,10 @@ namespace Dreamine.MVVM.Core
         public static void Register<TImplementation>()
             where TImplementation : class
         {
-            Container.Register<TImplementation>();
+            lock (SyncRoot)
+            {
+                Container.Register<TImplementation>();
+            }
         }
 
         /// <summary>
@@ -35,7 +65,10 @@ namespace Dreamine.MVVM.Core
             where TService : class
             where TImplementation : class, TService
         {
-            Container.Register<TService, TImplementation>();
+            lock (SyncRoot)
+            {
+                Container.Register<TService, TImplementation>();
+            }
         }
 
         /// <summary>
@@ -46,7 +79,10 @@ namespace Dreamine.MVVM.Core
         public static void Register<TService>(Func<TService> factory)
             where TService : class
         {
-            Container.Register(factory);
+            lock (SyncRoot)
+            {
+                Container.Register(factory);
+            }
         }
 
         /// <summary>
@@ -57,7 +93,10 @@ namespace Dreamine.MVVM.Core
         public static void RegisterSingleton<TService>(TService instance)
             where TService : class
         {
-            Container.RegisterSingleton(instance);
+            lock (SyncRoot)
+            {
+                Container.RegisterSingleton(instance);
+            }
         }
 
         /// <summary>
@@ -67,7 +106,10 @@ namespace Dreamine.MVVM.Core
         public static void RegisterSingleton<TImplementation>()
             where TImplementation : class
         {
-            Container.RegisterSingleton<TImplementation>();
+            lock (SyncRoot)
+            {
+                Container.RegisterSingleton<TImplementation>();
+            }
         }
 
         /// <summary>
@@ -79,7 +121,10 @@ namespace Dreamine.MVVM.Core
             where TService : class
             where TImplementation : class, TService
         {
-            Container.RegisterSingleton<TService, TImplementation>();
+            lock (SyncRoot)
+            {
+                Container.RegisterSingleton<TService, TImplementation>();
+            }
         }
 
         /// <summary>
@@ -90,7 +135,10 @@ namespace Dreamine.MVVM.Core
         public static TService Resolve<TService>()
             where TService : class
         {
-            return Container.Resolve<TService>();
+            lock (SyncRoot)
+            {
+                return Container.Resolve<TService>();
+            }
         }
 
         /// <summary>
@@ -101,7 +149,11 @@ namespace Dreamine.MVVM.Core
         public static object Resolve(Type type)
         {
             ArgumentNullException.ThrowIfNull(type);
-            return Container.Resolve(type);
+
+            lock (SyncRoot)
+            {
+                return Container.Resolve(type);
+            }
         }
 
         /// <summary>
@@ -110,7 +162,10 @@ namespace Dreamine.MVVM.Core
         /// <param name="rootAssembly">The root assembly to scan first.</param>
         public static void AutoRegisterAll(Assembly rootAssembly)
         {
-            AutoRegistrationService.RegisterAll(rootAssembly, Container);
+            lock (SyncRoot)
+            {
+                AutoRegistrationService.RegisterAll(rootAssembly, Container);
+            }
         }
 
         /// <summary>
@@ -120,7 +175,10 @@ namespace Dreamine.MVVM.Core
         /// <returns>True if the service type is registered; otherwise false.</returns>
         public static bool IsRegistered<TService>()
         {
-            return Container.IsRegistered(typeof(TService));
+            lock (SyncRoot)
+            {
+                return Container.IsRegistered(typeof(TService));
+            }
         }
 
         /// <summary>
@@ -131,7 +189,11 @@ namespace Dreamine.MVVM.Core
         public static bool IsRegistered(Type serviceType)
         {
             ArgumentNullException.ThrowIfNull(serviceType);
-            return Container.IsRegistered(serviceType);
+
+            lock (SyncRoot)
+            {
+                return Container.IsRegistered(serviceType);
+            }
         }
     }
 }

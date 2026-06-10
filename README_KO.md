@@ -25,6 +25,7 @@ Dreamine.MVVM.Core는 다음 기능을 제공합니다.
 
 - `DMContainer` 정적 Facade
 - `DreamineContainer` 기본 의존성 컨테이너 구현체
+- Thread-safe 등록, 해석, Singleton 생성
 - Transient 서비스 등록
 - Singleton 서비스 등록
 - 팩토리 기반 서비스 등록
@@ -34,6 +35,7 @@ Dreamine.MVVM.Core는 다음 기능을 제공합니다.
 - 규칙 기반 자동 등록
 - Assembly 타입 스캔
 - `IObjectActivator` 기반 객체 생성
+- 테스트 격리를 위한 정적 Facade Reset 및 Container 교체 API
 
 ---
 
@@ -68,8 +70,12 @@ Dreamine.MVVM.Core는 명시적인 서비스 수명 정책을 사용합니다.
 | `RegisterSingleton<TImplementation>()` | Singleton | 최초 해석 시 한 번 생성하고 캐싱합니다. |
 | `RegisterSingleton<TService, TImplementation>()` | Singleton | 추상화와 구현체를 싱글턴으로 매핑합니다. |
 | `AutoRegisterAll(Assembly)` | 자동 등록 대상 Singleton | Dreamine 자동 등록 동작을 유지합니다. |
+| `DMContainer.Reset()` | 정적 Facade 초기화 | 전역 Container를 빈 `DreamineContainer`로 교체합니다. |
+| `DMContainer.SetContainer(IServiceContainer)` | 정적 Facade 교체 | 테스트 또는 Host가 격리된 Container를 제공할 수 있습니다. |
 
 > 중요: 자동 등록된 타입은 기본적으로 Singleton으로 등록됩니다. 따라서 자동 발견된 ViewModel, Model, Event, Manager는 애플리케이션이 별도 수명으로 명시 등록하지 않는 한 반복 해석 시 동일 인스턴스를 유지합니다.
+
+`DreamineContainer`는 등록과 해석을 내부적으로 직렬화합니다. Singleton 지연 생성은 보호되므로 여러 스레드가 최초 해석을 동시에 시도해도 하나의 인스턴스만 공유됩니다. 순환 참조 감지는 Container 공유 상태가 아니라 Resolve 호출 단위 Context에 저장됩니다.
 
 ---
 
@@ -87,11 +93,12 @@ Dreamine.MVVM.Core는 명시적인 서비스 수명 정책을 사용합니다.
 
 - `*Model`
 - `*Event`
-- `*Manager`
 - `*ViewModel`
+- `.Managers.` 또는 `.xaml.` 네임스페이스 아래의 `*Manager`
 - `.xaml.Model`
 - `.xaml.Event`
 - `.xaml.ViewModel`
+- `DreamineRegisterAttribute` 또는 `DreamineAutoRegisterAttribute` 이름의 Attribute가 붙은 타입
 
 조건에 맞는 타입은 Singleton 수명으로 등록됩니다.
 
@@ -112,8 +119,7 @@ Dreamine.MVVM.Core
     ├── DreamineContainer.cs
     ├── ResolutionContext.cs
     ├── ServiceDescriptor.cs
-    ├── ServiceLifetime.cs
-    └── ServiceRegistry.cs
+    └── ServiceLifetime.cs
 ```
 
 ---
@@ -180,6 +186,18 @@ IMyService service = DMContainer.Resolve<IMyService>();
 
 ```csharp
 DMContainer.AutoRegisterAll(typeof(App).Assembly);
+```
+
+### 테스트에서 정적 Facade 초기화
+
+```csharp
+DMContainer.Reset();
+```
+
+### 정적 Facade Container 교체
+
+```csharp
+DMContainer.SetContainer(new DreamineContainer());
 ```
 
 ---

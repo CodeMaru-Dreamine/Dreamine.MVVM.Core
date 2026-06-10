@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Threading;
 using Dreamine.MVVM.Interfaces.DependencyInjection;
 
 namespace Dreamine.MVVM.Core.DependencyInjection
@@ -11,8 +12,9 @@ namespace Dreamine.MVVM.Core.DependencyInjection
     {
         private readonly Dictionary<Type, ServiceDescriptor> _descriptors = new();
         private readonly Dictionary<Type, object> _singletonInstances = new();
-        private readonly HashSet<Type> _resolvingTypes = new();
+        private readonly AsyncLocal<ResolutionContext?> _currentResolutionContext = new();
         private readonly IObjectActivator _objectActivator;
+        private readonly object _syncRoot = new();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DreamineContainer"/> class.
@@ -54,12 +56,16 @@ namespace Dreamine.MVVM.Core.DependencyInjection
             Type serviceType = typeof(TService);
             Type implementationType = typeof(TImplementation);
 
-            _descriptors[serviceType] = new ServiceDescriptor(
-                serviceType,
-                implementationType,
-                factory: null,
-                instance: null,
-                lifetime: ServiceLifetime.Transient);
+            lock (_syncRoot)
+            {
+                _descriptors[serviceType] = new ServiceDescriptor(
+                    serviceType,
+                    implementationType,
+                    factory: null,
+                    instance: null,
+                    lifetime: ServiceLifetime.Transient);
+                _singletonInstances.Remove(serviceType);
+            }
         }
 
         /// <summary>
@@ -77,12 +83,16 @@ namespace Dreamine.MVVM.Core.DependencyInjection
 
             Type serviceType = typeof(TService);
 
-            _descriptors[serviceType] = new ServiceDescriptor(
-                serviceType,
-                implementationType: null,
-                factory: () => factory(),
-                instance: null,
-                lifetime: ServiceLifetime.Transient);
+            lock (_syncRoot)
+            {
+                _descriptors[serviceType] = new ServiceDescriptor(
+                    serviceType,
+                    implementationType: null,
+                    factory: () => factory(),
+                    instance: null,
+                    lifetime: ServiceLifetime.Transient);
+                _singletonInstances.Remove(serviceType);
+            }
         }
 
         /// <summary>
@@ -100,14 +110,17 @@ namespace Dreamine.MVVM.Core.DependencyInjection
 
             Type serviceType = typeof(TService);
 
-            _descriptors[serviceType] = new ServiceDescriptor(
-                serviceType,
-                instance.GetType(),
-                factory: null,
-                instance,
-                lifetime: ServiceLifetime.Singleton);
+            lock (_syncRoot)
+            {
+                _descriptors[serviceType] = new ServiceDescriptor(
+                    serviceType,
+                    instance.GetType(),
+                    factory: null,
+                    instance,
+                    lifetime: ServiceLifetime.Singleton);
 
-            _singletonInstances[serviceType] = instance;
+                _singletonInstances[serviceType] = instance;
+            }
         }
 
         /// <summary>
@@ -132,12 +145,16 @@ namespace Dreamine.MVVM.Core.DependencyInjection
             Type serviceType = typeof(TService);
             Type implementationType = typeof(TImplementation);
 
-            _descriptors[serviceType] = new ServiceDescriptor(
-                serviceType,
-                implementationType,
-                factory: null,
-                instance: null,
-                lifetime: ServiceLifetime.Singleton);
+            lock (_syncRoot)
+            {
+                _descriptors[serviceType] = new ServiceDescriptor(
+                    serviceType,
+                    implementationType,
+                    factory: null,
+                    instance: null,
+                    lifetime: ServiceLifetime.Singleton);
+                _singletonInstances.Remove(serviceType);
+            }
         }
 
         /// <summary>
@@ -152,7 +169,10 @@ namespace Dreamine.MVVM.Core.DependencyInjection
                 throw new ArgumentNullException(nameof(serviceType));
             }
 
-            return _descriptors.ContainsKey(serviceType);
+            lock (_syncRoot)
+            {
+                return _descriptors.ContainsKey(serviceType);
+            }
         }
 
         /// <summary>
@@ -178,6 +198,31 @@ namespace Dreamine.MVVM.Core.DependencyInjection
                 throw new ArgumentNullException(nameof(serviceType));
             }
 
+            lock (_syncRoot)
+            {
+                ResolutionContext? previousContext = _currentResolutionContext.Value;
+                bool ownsContext = previousContext is null;
+                if (ownsContext)
+                {
+                    _currentResolutionContext.Value = new ResolutionContext();
+                }
+
+                try
+                {
+                    return ResolveCore(serviceType);
+                }
+                finally
+                {
+                    if (ownsContext)
+                    {
+                        _currentResolutionContext.Value = null;
+                    }
+                }
+            }
+        }
+
+        private object ResolveCore(Type serviceType)
+        {
             if (_singletonInstances.TryGetValue(serviceType, out object? singleton))
             {
                 return singleton;
@@ -222,7 +267,8 @@ namespace Dreamine.MVVM.Core.DependencyInjection
 
         private object CreateConcrete(Type implementationType)
         {
-            if (!_resolvingTypes.Add(implementationType))
+            ResolutionContext context = _currentResolutionContext.Value ?? new ResolutionContext();
+            if (!context.TryEnter(implementationType))
             {
                 throw new InvalidOperationException(
                     $"Circular dependency detected while resolving [{implementationType.FullName}].");
@@ -234,7 +280,7 @@ namespace Dreamine.MVVM.Core.DependencyInjection
             }
             finally
             {
-                _resolvingTypes.Remove(implementationType);
+                context.Exit(implementationType);
             }
         }
 

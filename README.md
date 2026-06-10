@@ -25,6 +25,7 @@ Dreamine.MVVM.Core provides:
 
 - `DMContainer` static facade
 - `DreamineContainer` default dependency container implementation
+- thread-safe registration, resolution, and singleton creation
 - transient service registration
 - singleton service registration
 - factory-based service registration
@@ -34,6 +35,7 @@ Dreamine.MVVM.Core provides:
 - convention-based auto-registration
 - assembly type scanning
 - object activation through `IObjectActivator`
+- static facade reset and container replacement APIs for test isolation
 
 ---
 
@@ -68,8 +70,12 @@ Dreamine.MVVM.Core uses explicit lifetime behavior.
 | `RegisterSingleton<TImplementation>()` | Singleton | Creates and caches one instance on first resolve. |
 | `RegisterSingleton<TService, TImplementation>()` | Singleton | Abstraction-to-implementation singleton mapping. |
 | `AutoRegisterAll(Assembly)` | Singleton for matched types | Preserves Dreamine auto-registration behavior. |
+| `DMContainer.Reset()` | Static facade reset | Replaces the global container with an empty `DreamineContainer`. |
+| `DMContainer.SetContainer(IServiceContainer)` | Static facade replacement | Allows tests or hosts to provide an isolated container. |
 
 > Important: auto-registered types are registered as singleton services by default. This keeps automatically discovered ViewModels, Models, Events, and Managers stable across repeated resolution unless the application explicitly registers another lifetime.
+
+`DreamineContainer` serializes registration and resolution internally. Singleton lazy creation is guarded so concurrent first resolves produce one shared instance. Circular dependency detection is stored in a per-resolution context instead of shared container state.
 
 ---
 
@@ -87,11 +93,12 @@ The current naming convention targets concrete non-generic classes whose names o
 
 - `*Model`
 - `*Event`
-- `*Manager`
 - `*ViewModel`
+- `*Manager` only when the type is under a `.Managers.` or `.xaml.` namespace
 - `.xaml.Model`
 - `.xaml.Event`
 - `.xaml.ViewModel`
+- types marked with an attribute named `DreamineRegisterAttribute` or `DreamineAutoRegisterAttribute`
 
 Matched types are registered using singleton lifetime.
 
@@ -112,8 +119,7 @@ Dreamine.MVVM.Core
     ├── DreamineContainer.cs
     ├── ResolutionContext.cs
     ├── ServiceDescriptor.cs
-    ├── ServiceLifetime.cs
-    └── ServiceRegistry.cs
+    └── ServiceLifetime.cs
 ```
 
 ---
@@ -180,6 +186,18 @@ IMyService service = DMContainer.Resolve<IMyService>();
 
 ```csharp
 DMContainer.AutoRegisterAll(typeof(App).Assembly);
+```
+
+### Reset the static facade in tests
+
+```csharp
+DMContainer.Reset();
+```
+
+### Replace the static facade container
+
+```csharp
+DMContainer.SetContainer(new DreamineContainer());
 ```
 
 ---

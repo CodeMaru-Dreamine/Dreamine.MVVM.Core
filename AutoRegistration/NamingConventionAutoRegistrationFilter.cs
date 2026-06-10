@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Linq;
 using Dreamine.MVVM.Interfaces.DependencyInjection;
 
 namespace Dreamine.MVVM.Core.AutoRegistration
@@ -28,9 +29,10 @@ namespace Dreamine.MVVM.Core.AutoRegistration
             string name = type.Name;
             string fullName = type.FullName ?? string.Empty;
 
-            return name.EndsWith("Model", StringComparison.Ordinal) ||
+            return HasExplicitDreamineRegistrationAttribute(type) ||
+                   name.EndsWith("Model", StringComparison.Ordinal) ||
                    name.EndsWith("Event", StringComparison.Ordinal) ||
-                   name.EndsWith("Manager", StringComparison.Ordinal) ||
+                   IsManagerTarget(name, fullName) ||
                    name.EndsWith("ViewModel", StringComparison.Ordinal) ||
                    fullName.Contains(".xaml.ViewModel", StringComparison.Ordinal) ||
                    fullName.Contains(".xaml.Model", StringComparison.Ordinal) ||
@@ -42,6 +44,19 @@ namespace Dreamine.MVVM.Core.AutoRegistration
             return type.IsClass &&
                    !type.IsAbstract &&
                    !type.IsGenericTypeDefinition;
+        }
+
+        private static bool IsManagerTarget(string name, string fullName)
+        {
+            return name.EndsWith("Manager", StringComparison.Ordinal) &&
+                   (fullName.Contains(".Managers.", StringComparison.Ordinal) ||
+                    fullName.Contains(".xaml.", StringComparison.Ordinal));
+        }
+
+        private static bool HasExplicitDreamineRegistrationAttribute(Type type)
+        {
+            return type.GetCustomAttributes(inherit: false)
+                .Any(attribute => attribute.GetType().Name is "DreamineRegisterAttribute" or "DreamineAutoRegisterAttribute");
         }
     }
 }

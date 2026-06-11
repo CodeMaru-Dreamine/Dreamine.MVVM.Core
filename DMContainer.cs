@@ -11,7 +11,17 @@ namespace Dreamine.MVVM.Core
     public static partial class DMContainer
     {
         private static readonly object SyncRoot = new();
-        private static IServiceContainer Container = new DreamineContainer();
+        private static IServiceContainer Container = CreateDefaultContainer();
+
+        // Self-registers IServiceResolver so that ViewManager(IServiceResolver) and other
+        // constructor-injected types can be resolved by DreamineContainer without an
+        // explicit registration call from application startup code.
+        private static DreamineContainer CreateDefaultContainer()
+        {
+            var c = new DreamineContainer();
+            c.RegisterSingleton<IServiceResolver>(c);
+            return c;
+        }
 
         /// <summary>
         /// Returns the underlying <see cref="IServiceRegistry"/> so that external
@@ -57,7 +67,7 @@ namespace Dreamine.MVVM.Core
             lock (SyncRoot)
             {
                 previous = Container;
-                Container = new DreamineContainer();
+                Container = CreateDefaultContainer();
             }
 
             (previous as IDisposable)?.Dispose();

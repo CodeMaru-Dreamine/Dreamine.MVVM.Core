@@ -8,13 +8,14 @@ namespace Dreamine.MVVM.Core.DependencyInjection
     /// <summary>
     /// Default dependency container implementation for Dreamine.
     /// </summary>
-    public sealed class DreamineContainer : IServiceContainer
+    public sealed class DreamineContainer : IServiceContainer, IDisposable
     {
         private readonly Dictionary<Type, ServiceDescriptor> _descriptors = new();
         private readonly Dictionary<Type, object> _singletonInstances = new();
         private readonly AsyncLocal<ResolutionContext?> _currentResolutionContext = new();
         private readonly IObjectActivator _objectActivator;
         private readonly object _syncRoot = new();
+        private bool _disposed;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DreamineContainer"/> class.
@@ -284,6 +285,36 @@ namespace Dreamine.MVVM.Core.DependencyInjection
             finally
             {
                 context.Exit(implementationType);
+            }
+        }
+
+        /// <summary>
+        /// Disposes all singleton instances that implement <see cref="IDisposable"/>,
+        /// then clears all registrations.
+        /// </summary>
+        public void Dispose()
+        {
+            List<object> toDispose;
+
+            lock (_syncRoot)
+            {
+                if (_disposed)
+                {
+                    return;
+                }
+
+                _disposed = true;
+                toDispose = new List<object>(_singletonInstances.Values);
+                _singletonInstances.Clear();
+                _descriptors.Clear();
+            }
+
+            foreach (object instance in toDispose)
+            {
+                if (instance is IDisposable disposable)
+                {
+                    disposable.Dispose();
+                }
             }
         }
 

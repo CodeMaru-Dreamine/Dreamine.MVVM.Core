@@ -43,10 +43,15 @@ namespace Dreamine.MVVM.Core
         /// </summary>
         public static void Reset()
         {
+            IServiceContainer previous;
+
             lock (SyncRoot)
             {
+                previous = Container;
                 Container = new DreamineContainer();
             }
+
+            (previous as IDisposable)?.Dispose();
         }
 
         /// <summary>
@@ -159,6 +164,30 @@ namespace Dreamine.MVVM.Core
             lock (SyncRoot)
             {
                 return Container.Resolve(type);
+            }
+        }
+
+        /// <summary>
+        /// Attempts to resolve an instance of the specified service type without throwing.
+        /// </summary>
+        /// <typeparam name="TService">The service type.</typeparam>
+        /// <param name="result">The resolved instance, or <c>null</c> if not registered.</param>
+        /// <returns><c>true</c> if resolved successfully; otherwise <c>false</c>.</returns>
+        public static bool TryResolve<TService>(out TService? result)
+            where TService : class
+        {
+            try
+            {
+                lock (SyncRoot)
+                {
+                    result = Container.Resolve<TService>();
+                    return true;
+                }
+            }
+            catch (InvalidOperationException)
+            {
+                result = null;
+                return false;
             }
         }
 

@@ -188,6 +188,27 @@ namespace Dreamine.MVVM.Core.DependencyInjection
         }
 
         /// <summary>
+        /// Attempts to resolve an instance of the specified service type without throwing.
+        /// </summary>
+        /// <typeparam name="TService">The service type.</typeparam>
+        /// <param name="result">The resolved instance, or <c>null</c> if not registered.</param>
+        /// <returns><c>true</c> if resolved successfully; otherwise <c>false</c>.</returns>
+        public bool TryResolve<TService>(out TService? result)
+            where TService : class
+        {
+            try
+            {
+                result = Resolve<TService>();
+                return true;
+            }
+            catch (InvalidOperationException)
+            {
+                result = null;
+                return false;
+            }
+        }
+
+        /// <summary>
         /// Resolves an instance of the specified service type.
         /// </summary>
         /// <param name="serviceType">The service type.</param>

@@ -23,6 +23,15 @@ namespace Dreamine.MVVM.Core
             lock (SyncRoot) { return Container; }
         }
 
+        /// <summary>
+        /// Returns the underlying <see cref="IServiceResolver"/> for constructor injection scenarios
+        /// where callers want to avoid a direct static dependency on <see cref="DMContainer"/>.
+        /// </summary>
+        public static IServiceResolver GetResolver()
+        {
+            lock (SyncRoot) { return Container; }
+        }
+
 
         /// <summary>
         /// Replaces the default container used by the static facade.

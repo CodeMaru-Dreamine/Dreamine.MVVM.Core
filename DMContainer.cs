@@ -1,6 +1,5 @@
 using System;
 using System.Reflection;
-using Dreamine.MVVM.Core.AutoRegistration;
 using Dreamine.MVVM.Core.DependencyInjection;
 using Dreamine.MVVM.Interfaces.DependencyInjection;
 
@@ -14,9 +13,16 @@ namespace Dreamine.MVVM.Core
         private static readonly object SyncRoot = new();
         private static IServiceContainer Container = new DreamineContainer();
 
-        private static readonly AutoRegistrationService AutoRegistrationService = new(
-            new AssemblyTypeScanner(),
-            new NamingConventionAutoRegistrationFilter());
+        /// <summary>
+        /// Returns the underlying <see cref="IServiceRegistry"/> so that external
+        /// utilities (e.g. <see cref="DreamineAutoRegistrar"/>) can register types
+        /// without going through the static facade methods.
+        /// </summary>
+        internal static IServiceRegistry GetRegistry()
+        {
+            lock (SyncRoot) { return Container; }
+        }
+
 
         /// <summary>
         /// Replaces the default container used by the static facade.
@@ -160,12 +166,14 @@ namespace Dreamine.MVVM.Core
         /// Automatically registers supported types from the specified root assembly using singleton lifetime.
         /// </summary>
         /// <param name="rootAssembly">The root assembly to scan first.</param>
+        /// <remarks>
+        /// Prefer <see cref="DreamineAutoRegistrar.RegisterAll"/> for new code.
+        /// This overload is kept for backward compatibility.
+        /// </remarks>
+        [System.Obsolete("Use DreamineAutoRegistrar.RegisterAll(rootAssembly, DMContainer) instead.")]
         public static void AutoRegisterAll(Assembly rootAssembly)
         {
-            lock (SyncRoot)
-            {
-                AutoRegistrationService.RegisterAll(rootAssembly, Container);
-            }
+            DreamineAutoRegistrar.RegisterAll(rootAssembly, Container);
         }
 
         /// <summary>

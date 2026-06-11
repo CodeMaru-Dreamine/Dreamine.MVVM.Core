@@ -198,25 +198,28 @@ namespace Dreamine.MVVM.Core.DependencyInjection
                 throw new ArgumentNullException(nameof(serviceType));
             }
 
-            lock (_syncRoot)
+            // AsyncLocal context setup is per-async-flow and must live outside the lock
+            // so that nested Resolve calls on the same flow see the same context
+            // without requiring lock re-entry ordering to be preserved.
+            ResolutionContext? previousContext = _currentResolutionContext.Value;
+            bool ownsContext = previousContext is null;
+            if (ownsContext)
             {
-                ResolutionContext? previousContext = _currentResolutionContext.Value;
-                bool ownsContext = previousContext is null;
-                if (ownsContext)
-                {
-                    _currentResolutionContext.Value = new ResolutionContext();
-                }
+                _currentResolutionContext.Value = new ResolutionContext();
+            }
 
-                try
+            try
+            {
+                lock (_syncRoot)
                 {
                     return ResolveCore(serviceType);
                 }
-                finally
+            }
+            finally
+            {
+                if (ownsContext)
                 {
-                    if (ownsContext)
-                    {
-                        _currentResolutionContext.Value = null;
-                    }
+                    _currentResolutionContext.Value = null;
                 }
             }
         }

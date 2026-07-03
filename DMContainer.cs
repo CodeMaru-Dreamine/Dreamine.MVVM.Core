@@ -215,7 +215,7 @@ namespace Dreamine.MVVM.Core
         /// </summary>
         /// <param name="rootAssembly">The root assembly to scan first.</param>
         /// <remarks>
-        /// Prefer <see cref="DreamineAutoRegistrar.RegisterAll"/> for new code.
+        /// Prefer <see cref="DreamineAutoRegistrar.RegisterAll(Assembly, IServiceRegistry)"/> for new code.
         /// This overload is kept for backward compatibility.
         /// </remarks>
         [System.Obsolete("Use DreamineAutoRegistrar.RegisterAll(rootAssembly, DMContainer) instead.")]

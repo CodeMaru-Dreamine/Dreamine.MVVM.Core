@@ -1,5 +1,7 @@
 using Dreamine.MVVM.Core;
+using Dreamine.MVVM.Core.AutoRegistration;
 using Dreamine.MVVM.Core.DependencyInjection;
+using Dreamine.MVVM.Core.Locators;
 using Xunit;
 
 namespace Dreamine.MVVM.Core.Tests;
@@ -128,7 +130,79 @@ public sealed class ContainerTests
         Assert.False(DMContainer.IsRegistered<IClock>());
     }
 
+    [Fact]
+    public void StaticFacadeSupportsEveryRegistrationShape()
+    {
+        DMContainer.Register<FixedClock>();
+        Assert.IsType<FixedClock>(DMContainer.Resolve<FixedClock>());
+
+        DMContainer.Register(() => new Token(Guid.NewGuid()));
+        Assert.NotEqual(DMContainer.Resolve<Token>().Value, DMContainer.Resolve<Token>().Value);
+
+        var instance = new AlternateClock();
+        DMContainer.RegisterSingleton<IClock>(instance);
+        Assert.Same(instance, DMContainer.Resolve<IClock>());
+        Assert.True(DMContainer.IsRegistered(typeof(IClock)));
+
+        DMContainer.RegisterSingleton<SlowSingleton>();
+        Assert.Same(DMContainer.Resolve<SlowSingleton>(), DMContainer.Resolve(typeof(SlowSingleton)));
+
+        DMContainer.RegisterSingleton<IClock, FixedClock>();
+        Assert.IsType<FixedClock>(DMContainer.Resolve<IClock>());
+        Assert.True(DMContainer.TryResolve<IClock>(out var resolved));
+        Assert.NotNull(resolved);
+        Assert.False(DMContainer.TryResolve<IUnregistered>(out _));
+    }
+
+    [Fact]
+    public void StaticFacadeCanReplaceItsContainer()
+    {
+        using var replacement = new DreamineContainer();
+        replacement.RegisterSingleton<IClock>(new AlternateClock());
+
+        DMContainer.SetContainer(replacement);
+
+        Assert.Same(replacement, DMContainer.GetResolver());
+        Assert.IsType<AlternateClock>(DMContainer.Resolve<IClock>());
+        Assert.Throws<ArgumentNullException>(() => DMContainer.SetContainer(null!));
+        Assert.Throws<ArgumentNullException>(() => DMContainer.Resolve(null!));
+        Assert.Throws<ArgumentNullException>(() => DMContainer.IsRegistered(null!));
+    }
+
+    [Fact]
+    public void ScannerReturnsRootAssemblyAndItsLoadableTypes()
+    {
+        var scanner = new AssemblyTypeScanner();
+        var assembly = typeof(ContainerTests).Assembly;
+
+        Assert.Contains(assembly, scanner.GetCandidateAssemblies(assembly));
+        Assert.Contains(typeof(ContainerTests), scanner.GetLoadableTypes(assembly));
+        Assert.Throws<ArgumentNullException>(() => scanner.GetCandidateAssemblies(null!).ToArray());
+        Assert.Throws<ArgumentNullException>(() => scanner.GetLoadableTypes(null!).ToArray());
+    }
+
+    [Fact]
+    public void ViewModelResolverUsesTheStaticContainer()
+    {
+        DMContainer.Register<FixedClock>();
+        var resolver = new DreamineContainerViewModelResolver();
+
+        Assert.IsType<FixedClock>(resolver.Resolve(typeof(FixedClock)));
+        Assert.Throws<ArgumentNullException>(() => resolver.Resolve(null!));
+    }
+
+    [Fact]
+    public void ConstructorSelectorRejectsInvalidTypesAndSelectsGreediestConstructor()
+    {
+        var selector = new ConstructorSelector();
+
+        Assert.Equal(2, selector.SelectConstructor(typeof(MultipleConstructors)).GetParameters().Length);
+        Assert.Throws<ArgumentNullException>(() => selector.SelectConstructor(null!));
+        Assert.Throws<InvalidOperationException>(() => selector.SelectConstructor(typeof(NoPublicConstructor)));
+    }
+
     private interface IClock { DateOnly Today { get; } }
+    private interface IUnregistered { }
     private sealed class FixedClock : IClock { public DateOnly Today => new(2026, 6, 7); }
     private sealed class AlternateClock : IClock { public DateOnly Today => new(2026, 6, 8); }
     private sealed record Token(Guid Value);
@@ -149,5 +223,14 @@ public sealed class ContainerTests
     {
         public int DisposeCount { get; private set; }
         public void Dispose() => DisposeCount++;
+    }
+    private sealed class MultipleConstructors
+    {
+        public MultipleConstructors() { }
+        public MultipleConstructors(IClock clock, Token token) { }
+    }
+    private sealed class NoPublicConstructor
+    {
+        private NoPublicConstructor() { }
     }
 }

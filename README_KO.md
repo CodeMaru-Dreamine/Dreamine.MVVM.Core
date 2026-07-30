@@ -9,6 +9,10 @@
 
 # Dreamine.MVVM.Core
 
+[![CI](https://github.com/CodeMaru-Dreamine/Dreamine.MVVM.Core/actions/workflows/ci.yml/badge.svg)](https://github.com/CodeMaru-Dreamine/Dreamine.MVVM.Core/actions/workflows/ci.yml) [![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=CodeMaru-Dreamine_Dreamine.MVVM.Core&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=CodeMaru-Dreamine_Dreamine.MVVM.Core) [![Security](https://sonarcloud.io/api/project_badges/measure?project=CodeMaru-Dreamine_Dreamine.MVVM.Core&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=CodeMaru-Dreamine_Dreamine.MVVM.Core) [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=CodeMaru-Dreamine_Dreamine.MVVM.Core&metric=coverage)](https://sonarcloud.io/summary/new_code?id=CodeMaru-Dreamine_Dreamine.MVVM.Core)<br>
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![.NET](https://img.shields.io/badge/.NET-8-512BD4)](https://dotnet.microsoft.com/) [![Visual Studio](https://img.shields.io/badge/Visual%20Studio-2022%20%7C%202026-5C2D91)](https://visualstudio.microsoft.com/)<br>
+[![NuGet](https://img.shields.io/nuget/v/Dreamine.MVVM.Core.svg?label=nuget)](https://www.nuget.org/packages/Dreamine.MVVM.Core/) [![Downloads](https://img.shields.io/nuget/dt/Dreamine.MVVM.Core.svg?label=downloads)](https://www.nuget.org/packages/Dreamine.MVVM.Core/) [![Docs](https://img.shields.io/badge/Docs-dreamine.kr-2496ED)](https://dreamine.kr/) [![Guide](https://img.shields.io/badge/Guide-dreamine.kr-2496ED)](https://dreamine.kr/) [![Playground](https://img.shields.io/badge/Playground-dreamine.kr-6F42C1)](https://dreamine.kr/) [![Book](https://img.shields.io/badge/Book-Practical%20MVVM%20Architecture-black)](https://dreamine.kr/)
+
 **Dreamine.MVVM.Core**는 Dreamine MVVM 프레임워크의 경량 런타임 인프라 구현 모듈입니다.
 
 이 패키지는 Dreamine 모듈에서 사용하는 기본 의존성 주입 구현체를 제공합니다. 주요 역할은 명시적 서비스 등록, 생성자 기반 해석, 싱글턴 인스턴스 관리, 객체 생성, 규칙 기반 자동 등록입니다.
